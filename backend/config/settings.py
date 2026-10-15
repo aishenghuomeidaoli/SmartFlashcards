@@ -32,6 +32,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # 静态文件由应用自己服务（见 STORAGES）：DEBUG=False 时不加它，admin 的 CSS/JS 全 404
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -114,6 +116,14 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# 静态文件由 whitenoise 直接由应用服务（压缩 + 长缓存头）。
+# 不自部署时也成立：前面有 nginx 时它仍可把 /static/ 交给 Django，无需额外 alias。
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
+WHITENOISE_MAX_AGE = 60 * 60 * 24 * 30 if not DEBUG else 0
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

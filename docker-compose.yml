@@ -1,8 +1,11 @@
-# 一键起本地/自部署环境。
-#   docker compose up -d              只起数据库（后端在本机跑，开发时最方便）
-#   docker compose --profile app up -d 连后端一起起（含迁移，对外 8000）
+# 一键起整套（db + 后端 + 前端）：
+#   cp .env.example .env     # 按注释改
+#   docker compose up -d --build
+# 只想在本机跑开发、把数据库交给 docker：
+#   docker compose up -d db
 #
-# 变量从仓库根的 .env 读（没配就用下面的默认值），模板见 backend/.env.example。
+# 变量全部从仓库根的 .env 读（模板见 .env.example）。
+# ⚠️ 前端容器的 NEXT_PUBLIC_* 是**构建期**参数，改完 client id 要 `docker compose build web` 重建。
 
 services:
   db:
@@ -11,7 +14,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-smartflashcards}
       POSTGRES_USER: ${POSTGRES_USER:-smartflashcards}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartflashcards}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 必须在 .env 里设置}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -24,9 +27,7 @@ services:
       retries: 20
 
   backend:
-    profiles: ["app"]
-    build:
-      context: ./backend
+    build: ./backend
     restart: unless-stopped
     env_file:
       - .env
@@ -35,11 +36,36 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       POSTGRES_SSLMODE: disable
+    # 启动前先把迁移跑完，再交给 gunicorn
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000
+             --workers 2 --access-logfile - --error-logfile -"
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+      args:
+        # 与后端共用同一个 client id（同一个 .env，避免两处写不一致）
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+        NEXT_PUBLIC_GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+    restart: unless-stopped
+    environment:
+      # 容器内互访：服务端组件 / BFF 通过服务名打后端
+      DJANGO_API_BASE: http://backend:8000
+      # GitHub 只注册一个回调地址，这里必须与 GitHub 控制台里填的一致
+      GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI:-http://localhost:8000/api/auth/github/callback}
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
