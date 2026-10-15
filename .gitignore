@@ -1,0 +1,28 @@
+# ── 密钥与本地配置 ──
+.env
+.env.*
+!.env.example
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+staticfiles/
+media/
+data/
+
+# ── Node / Next ──
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.env.local
+!.env.local.example
+
+# ── 系统 / 编辑器 ──
+.DS_Store
+.idea/
+.vscode/
+*.log

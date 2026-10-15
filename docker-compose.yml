@@ -1,0 +1,45 @@
+# 一键起本地/自部署环境。
+#   docker compose up -d              只起数据库（后端在本机跑，开发时最方便）
+#   docker compose --profile app up -d 连后端一起起（含迁移，对外 8000）
+#
+# 变量从仓库根的 .env 读（没配就用下面的默认值），模板见 backend/.env.example。
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smartflashcards}
+      POSTGRES_USER: ${POSTGRES_USER:-smartflashcards}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartflashcards}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # 后端要等它真的能接连接，否则 migrate 会连不上
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smartflashcards} -d ${POSTGRES_DB:-smartflashcards}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    profiles: ["app"]
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # 容器里连的是 compose 网络里的 db，不是宿主 127.0.0.1
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_SSLMODE: disable
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
