@@ -6,3 +6,7 @@ python-decouple>=3.8,<4.0
 psycopg[binary]>=3.2,<4.0
 requests>=2.32,<3.0
 ulid-py>=1.1.0,<2.0.0
+# settings.py 无条件引用 WhiteNoiseMiddleware，所以它必须是基础依赖：
+# 少了它，装 local.txt 的本地开发与 CI 里任何走 test client 的用例都会
+# ModuleNotFoundError（实测 4 个回调中转用例因此失败）
+whitenoise>=6.7,<7.0

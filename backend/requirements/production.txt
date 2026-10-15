@@ -1,5 +1,4 @@
 -r base.txt
 gunicorn>=23.0,<24.0
-# 生产由应用自己服务静态文件：DEBUG=False 时 Django 不服务 /static/，
-# 没有它 admin 的 CSS/JS 全是 404（除非前面有 nginx 直接 alias 到 staticfiles）
-whitenoise>=6.7,<7.0
+# 注：whitenoise（DEBUG=False 时由应用自己服务 /static/，否则 admin 的 CSS/JS 全 404）
+# 已经放进 base.txt —— settings.py 无条件引用它，放这里会让本机开发与 CI 起不来。
