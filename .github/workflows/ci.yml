@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: smartflashcards
+          POSTGRES_USER: smartflashcards
+          POSTGRES_PASSWORD: smartflashcards
+        ports:
+          - 5432:5432
+        # 不等健康就直接跑 migrate 会连不上
+        options: >-
+          --health-cmd "pg_isready -U smartflashcards -d smartflashcards"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      # 只用于 CI：application 的密钥由环境变量注入，仓库里不放任何真实值
+      DJANGO_SECRET_KEY: ci-only-key
+      DJANGO_DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      POSTGRES_DB: smartflashcards
+      POSTGRES_USER: smartflashcards
+      POSTGRES_PASSWORD: smartflashcards
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      POSTGRES_SSLMODE: disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r backend/requirements/local.txt
+      - name: Django check & migrations
+        working-directory: backend
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+          python manage.py migrate --noinput
+      - name: Tests
+        working-directory: backend
+        run: python manage.py test apps.accounts -v 2
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Build
+        # NEXT_PUBLIC_* 是构建期内联的，CI 里给占位值即可（只验证能构建）
+        env:
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ci-placeholder
+          NEXT_PUBLIC_GITHUB_CLIENT_ID: ci-placeholder
+        run: npm run build
