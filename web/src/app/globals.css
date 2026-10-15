@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/* 设计令牌：与分享图（scripts/make-og-image.py）同一套配色，改这里记得同步那边。
+   语义命名（canvas/surface/line/fg…），工具类只引用变量，主题切换时只换变量值。
+   默认 dark（与站点原貌一致），light 覆盖写在 html[data-theme="light"] 下 —— 优先级高于 :root。 */
+@theme {
+  --color-canvas: #0f172a;      /* 页面底色 */
+  --color-surface: #1e293b;     /* 卡片 / 面板（常与 /30 /40 透明度一起用） */
+  --color-overlay: #1e293b;     /* 浮层：下拉菜单、弹窗（要盖在 canvas 上看得清） */
+  --color-line: #334155;        /* 描边、分隔线 */
+  --color-fg: #f8fafc;          /* 正文 */
+  --color-muted: #94a3b8;       /* 次要文字 */
+  --color-brand: #38bdf8;       /* 品牌色：链接、主按钮底色 */
+  --color-brand-deep: #1e3a5f;  /* 品牌深色：分享图辉光 */
+  --color-on-brand: #0f172a;    /* 品牌色底上的文字 / 图形 */
+}
+
+html {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --color-canvas: #f8fafc;
+  --color-surface: #dde5f0;
+  --color-overlay: #ffffff;
+  --color-line: #e2e8f0;
+  --color-fg: #0f172a;
+  --color-muted: #64748b;
+  --color-brand: #0284c7;
+  --color-on-brand: #ffffff;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* 主题切换按钮：两枚图标都渲染，显示哪枚由 CSS 按 data-theme 定 —— 服务端不用知道用户选了哪个主题，
+   首屏不会闪、也不会出现 hydration 错位（JS 未启用时显示默认 dark 的那枚） */
+html[data-theme="light"] .theme-icon-moon,
+html[data-theme="dark"] .theme-icon-sun {
+  display: none;
+}
+
+/* 知识资产的 markdown：只做够用的排版，不引 typography 插件 */
+.prose-sf {
+  line-height: 1.85;
+  font-size: 1.0625rem;
+}
+.prose-sf h1,
+.prose-sf h2,
+.prose-sf h3 {
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 2rem 0 0.75rem;
+  color: var(--color-fg);
+}
+.prose-sf h1 { font-size: 1.75rem; }
+.prose-sf h2 { font-size: 1.375rem; }
+.prose-sf h3 { font-size: 1.125rem; }
+.prose-sf p { margin: 0.85rem 0; }
+.prose-sf ul,
+.prose-sf ol { margin: 0.85rem 0 0.85rem 1.4rem; }
+.prose-sf ul { list-style: disc; }
+.prose-sf ol { list-style: decimal; }
+.prose-sf li { margin: 0.35rem 0; }
+.prose-sf code {
+  background: var(--color-surface);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.prose-sf pre {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+.prose-sf pre code { background: none; padding: 0; }
+.prose-sf blockquote {
+  border-left: 3px solid var(--color-brand);
+  padding-left: 1rem;
+  color: var(--color-muted);
+  margin: 1rem 0;
+}
+.prose-sf table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.prose-sf th,
+.prose-sf td { border: 1px solid var(--color-line); padding: 0.5rem 0.75rem; text-align: left; }
+.prose-sf img { max-width: 100%; border-radius: 10px; }
+.prose-sf a { color: var(--color-brand); text-decoration: underline; }
