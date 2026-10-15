@@ -95,6 +95,20 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
+# ── 反向代理 ──
+# nginx → gunicorn 是 http，必须显式告诉 Django 外侧其实是 https：
+# 少了这条，request.is_secure() 恒为 False，Django 把站点当成 http ——
+# 后果一是 admin 登录的 CSRF Origin 校验会把 https://… 判成跨站（403），
+# 二是 Secure cookie / 各种 is_secure() 分支全部走错。
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = config("USE_X_FORWARDED_HOST", default=False, cast=bool)
+# 多域名/多入口时按需补充（同源请求不需要写在这里）
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
+
+# 生产默认把会话与 CSRF cookie 限制在 https 上；本地 http 调试时把这两项设 False
+SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=not DEBUG, cast=bool)
+CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=not DEBUG, cast=bool)
+
 # ── 静态/媒体 ──
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
