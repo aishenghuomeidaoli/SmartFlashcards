@@ -1,3 +1,7 @@
+# 固定项目名：避免与同机上另一个同名目录（例如旧克隆）共用卷与容器名，
+# 也避免租户的卷被不同大版本的 Postgres 打开（PG16 的数据目录 PG17 打不开，直接崩在启动）。
+name: smartflashcards-sfo
+
 # 一键起整套（db + 后端 + 前端）：
 #   cp .env.example .env     # 按注释改
 #   docker compose up -d --build
