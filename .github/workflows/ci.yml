@@ -38,6 +38,8 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
+          # 依赖不在仓库根，不给路径的话 setup-python 会因找不到默认的 requirements.txt 直接失败
+          cache-dependency-path: backend/requirements/*.txt
       - run: pip install -r backend/requirements/local.txt
       - name: Django check & migrations
         working-directory: backend
