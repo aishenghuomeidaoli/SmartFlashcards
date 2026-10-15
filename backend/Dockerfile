@@ -7,7 +7,10 @@ WORKDIR /app
 
 # 先装依赖：改了业务代码不会让这一层失效
 COPY requirements/ requirements/
-RUN pip install --no-cache-dir -r requirements/production.txt
+# 网络受限时可传 --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+ARG PIP_INDEX_URL=
+RUN pip install --no-cache-dir ${PIP_INDEX_URL:+--index-url "$PIP_INDEX_URL"} \
+      -r requirements/production.txt
 
 COPY . .
 

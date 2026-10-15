@@ -6,7 +6,9 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# 网络受限时可传 --build-arg NPM_REGISTRY=https://registry.npmmirror.com
+ARG NPM_REGISTRY=
+RUN npm ci ${NPM_REGISTRY:+--registry="$NPM_REGISTRY"}
 
 COPY . .
 
