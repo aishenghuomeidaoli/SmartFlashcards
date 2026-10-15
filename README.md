@@ -45,12 +45,12 @@ npm run dev                         # http://localhost:3000
 | 提供方 | 在哪里建 | 回调地址填什么 |
 |---|---|---|
 | Google | Cloud Console → 凭据 → OAuth 2.0 客户端 ID（Web） | `http://localhost:3000/login`（生产填 `https://你的域名/login`）；Google 允许注册多个 |
-| GitHub | Settings → Developer settings → OAuth Apps → 新建 | `http://localhost:8000/api/auth/github/callback`（生产填 `https://你的域名/api/auth/github/callback`） |
+| GitHub | Settings → Developer settings → OAuth Apps → 新建 | `http://localhost:8000/api/auth/github/callback`（生产填 `https://你的域名/api/auth/github/callback`；也可以直接填 `https://你的域名/login`，两种都支持） |
 
 两条链路的差别（代码里都有注释，这里给结论）：
 
 - **Google**：授权时前端把当下的 `redirect_uri`（`{你访问的 origin}/login`）一起传给后端，所以支持 apex/www/localhost 多入口，服务端不用为每个域名改配置。
-- **GitHub**：OAuth App 只能注册**一个**回调地址，且 GitHub 会逐字校验，所以回调地址用 `GITHUB_REDIRECT_URI` 写死。该地址先打到**后端**（`/api/auth/github/callback`），后端只把 `code`/`state` 原样转交回前端的 `/login`，换码逻辑全在前端 `web/src/app/auth/callback/route.ts` 一处 —— 两处各实现一遍迟早会出现"Google 能登、GitHub 登不上"这种只在一边生效的偏差。
+- **GitHub**：OAuth App 只能注册**一个**回调地址，且 GitHub 会逐字校验，所以回调地址用 `GITHUB_REDIRECT_URI` 写死，必须与 GitHub 控制台里注册的**逐字一致**。两种注册方式都能用：填后端地址 `https://你的域名/api/auth/github/callback`（后端只把 `code`/`state` 原样转交回前端的 `/login`），或直接填前端的 `https://你的域名/login`（旧 SPA 就是这种注册，`/login` 拿到 `code` 会转给 `/auth/callback`）。无论哪种，换码逻辑都只有一处（`web/src/app/auth/callback/route.ts`）—— 两处各实现一遍迟早会出现"Google 能登、GitHub 登不上"这种只在一边生效的偏差。
 - 登录后 JWT 存在 httpOnly cookie（`sfo_access` / `sfo_refresh`），JS 读不到；访问令牌 2 小时、刷新令牌 30 天，`web/src/middleware.ts` 在到期前自动续期。
 
 ## 环境变量
