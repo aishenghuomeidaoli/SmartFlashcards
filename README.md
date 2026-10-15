@@ -65,9 +65,10 @@ npm run dev                         # http://localhost:3000
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google 登录 |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub 登录 |
 
-注意两点：
+注意三点：
 
 - `NEXT_PUBLIC_*` 是**构建期**内联的：Docker 里通过 build args 传（`docker compose build web` 重建），手动构建时先写好 `web/.env.local`。
+- 本地试用请用 `http://localhost:3000`（或 `127.0.0.1`）访问，**不要用局域网 IP**：容器里 `NODE_ENV=production`，登录 cookie 会带 `Secure`，只有 localhost / 127.0.0.1 被浏览器视为安全上下文。
 - 部署在 nginx 之类的反代后面时，`settings.py` 的 `SECURE_PROXY_SSL_HEADER` 依赖 nginx 发的 `X-Forwarded-Proto`，否则 Django 会把站点当 http，admin 登录会栽在 CSRF 校验上。生产还要把 `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE` 设为 True。
 
 ## 部署（裸机 systemd，参考实现）

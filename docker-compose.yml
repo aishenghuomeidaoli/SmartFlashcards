@@ -44,6 +44,9 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       POSTGRES_SSLMODE: disable
+      # BFF / SSR 是用服务名调后端的（http://backend:8000），Host 头就是 backend，
+      # 不把它加进 ALLOWED_HOSTS 会直接 400（DisallowedHost）—— 登录后所有接口全挂
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1},backend
     # 启动前先把迁移跑完，再交给 gunicorn
     command: >
       sh -c "python manage.py migrate --noinput &&
